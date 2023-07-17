@@ -1,9 +1,0 @@
-[user]
-	name = Mike Magana
-	email = m1k3.0xd@protonmail.com
-[log]
-	abbrevCommit = yes
-[core]
-	abbrev = 8
-[color]
-	ui = auto
