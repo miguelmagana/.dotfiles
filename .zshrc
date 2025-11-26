@@ -1,117 +1,286 @@
-# If you come from bash you might have to change your $PATH.
-# export PATH=$HOME/bin:/usr/local/bin:$PATH
+# ============================================================================
+# ZSH CONFIGURATION - Hacker/Bug Bounty Optimized
+# ============================================================================
 
-# Path to your oh-my-zsh installation.
-export ZSH="$HOME/.oh-my-zsh"
+# History Configuration (Large for tool outputs)
+HISTFILE=~/.zsh_history
+HISTSIZE=50000
+SAVEHIST=50000
+setopt SHARE_HISTORY          # Share history between sessions
+setopt HIST_IGNORE_DUPS       # Don't record duplicates
+setopt HIST_IGNORE_SPACE      # Ignore commands starting with space
+setopt HIST_VERIFY            # Show command before execution
+setopt HIST_EXPIRE_DUPS_FIRST # Expire duplicates first
+setopt HIST_FIND_NO_DUPS      # Don't show duplicates in history search
+setopt APPEND_HISTORY         # Append to history file
 
-# Set name of the theme to load --- if set to "random", it will
-# load a random theme each time oh-my-zsh is loaded, in which case,
-# to know which specific one was loaded, run: echo $RANDOM_THEME
-# See https://github.com/ohmyzsh/ohmyzsh/wiki/Themes
-ZSH_THEME="random"
+# Basic Options
+setopt AUTO_CD                # cd by typing directory name
+setopt CORRECT                # Correct spelling
+setopt COMPLETE_IN_WORD       # Complete from both ends
+setopt ALWAYS_TO_END          # Move cursor to end after completion
 
-# Set list of themes to pick from when loading at random
-# Setting this variable when ZSH_THEME=random will cause zsh to load
-# a theme from this variable instead of looking in $ZSH/themes/
-# If set to an empty array, this variable will have no effect.
-ZSH_THEME_RANDOM_CANDIDATES=( "robbyrussell" "jonathan" "duellj" "nanotech" )
+# Enable colors
+autoload -Uz colors && colors
 
-# Uncomment the following line to use case-sensitive completion.
-# CASE_SENSITIVE="true"
+# ============================================================================
+# CUSTOM PROMPT - Two-line with separator border
+# Inspired by robbyrussell, jonathan, duellj, nanotech themes
+# ============================================================================
 
-# Uncomment the following line to use hyphen-insensitive completion.
-# Case-sensitive completion must be off. _ and - will be interchangeable.
-# HYPHEN_INSENSITIVE="true"
+# Load VCS info for Git
+autoload -Uz vcs_info
+zstyle ':vcs_info:*' enable git
+zstyle ':vcs_info:git:*' formats ' %F{magenta}%b%f%F{red}%u%f%F{green}%c%f'
+zstyle ':vcs_info:git:*' actionformats ' %F{magenta}%b%f%F{yellow}|%a%f%F{red}%u%f%F{green}%c%f'
+zstyle ':vcs_info:*' unstagedstr '*'
+zstyle ':vcs_info:*' stagedstr '+'
+zstyle ':vcs_info:*' check-for-changes true
 
-# Uncomment one of the following lines to change the auto-update behavior
-# zstyle ':omz:update' mode disabled  # disable automatic updates
-# zstyle ':omz:update' mode auto      # update automatically without asking
-zstyle ':omz:update' mode reminder  # just remind me to update when it's time
+# Function to shorten path (breadcrumbs)
+shorten_path() {
+  local pwd="${PWD/#$HOME/~}"
+  local max_len=35
+  if [[ ${#pwd} -gt $max_len ]]; then
+    echo "${pwd:0:12}...${pwd: -20}"
+  else
+    echo "$pwd"
+  fi
+}
 
-# Uncomment the following line to change how often to auto-update (in days).
-zstyle ':omz:update' frequency 13
+# Exit code indicator
+exit_code_indicator() {
+  if [[ $? -eq 0 ]]; then
+    echo "%F{green}✓%f"
+  else
+    echo "%F{red}✗%f %F{red}[%?]%f"
+  fi
+}
 
-# Uncomment the following line if pasting URLs and other text is messed up.
-# DISABLE_MAGIC_FUNCTIONS="true"
+# Pre-command hook to update VCS info
+precmd() {
+  vcs_info
+}
 
-# Uncomment the following line to disable colors in ls.
-# DISABLE_LS_COLORS="true"
+# Set prompt with two-line layout and box-drawing borders
+setopt PROMPT_SUBST
 
-# Uncomment the following line to disable auto-setting terminal title.
-# DISABLE_AUTO_TITLE="true"
+# First line: Info spread across with separator
+# Format: ┌─ user@host path (git) [exit] ──────────────────────── time ─┐
+PROMPT='%F{cyan}┌─%f %F{cyan}%n@%m%f %F{blue}%$(shorten_path)%f${vcs_info_msg_0_} $(exit_code_indicator) %F{cyan}─%f%F{yellow}%*%f %F{cyan}─┐%f
+%F{cyan}└─%f %F{green}%#%f '
 
-# Uncomment the following line to enable command auto-correction.
-# ENABLE_CORRECTION="true"
+RPROMPT=''
 
-# Uncomment the following line to display red dots whilst waiting for completion.
-# You can also set it to another string to have that shown instead of the default red dots.
-# e.g. COMPLETION_WAITING_DOTS="%F{yellow}waiting...%f"
-# Caution: this setting can cause issues with multiline prompts in zsh < 5.7.1 (see #5765)
-# COMPLETION_WAITING_DOTS="true"
+# ============================================================================
+# ALIASES - Navigation
+# ============================================================================
 
-# Uncomment the following line if you want to disable marking untracked files
-# under VCS as dirty. This makes repository status check for large repositories
-# much, much faster.
-# DISABLE_UNTRACKED_FILES_DIRTY="true"
+alias ..='cd ..'
+alias ...='cd ../..'
+alias ....='cd ../../..'
+alias .....='cd ../../../..'
 
-# Uncomment the following line if you want to change the command execution time
-# stamp shown in the history command output.
-# You can set one of the optional three formats:
-# "mm/dd/yyyy"|"dd.mm.yyyy"|"yyyy-mm-dd"
-# or set a custom format using the strftime function format specifications,
-# see 'man strftime' for details.
-# HIST_STAMPS="mm/dd/yyyy"
+# ============================================================================
+# ALIASES - Standard Linux
+# ============================================================================
 
-# Would you like to use another custom folder than $ZSH/custom?
-# ZSH_CUSTOM=/path/to/new-custom-folder
+# Listing
+alias ll='ls -lah'
+alias la='ls -A'
+alias l='ls -CF'
+alias ls='ls --color=auto'
+alias dir='dir --color=auto'
+alias vdir='vdir --color=auto'
 
-# Which plugins would you like to load?
-# Standard plugins can be found in $ZSH/plugins/
-# Custom plugins may be added to $ZSH_CUSTOM/plugins/
-# Example format: plugins=(rails git textmate ruby lighthouse)
-# Add wisely, as too many plugins slow down shell startup.
-plugins=(git)
+# Grep
+alias grep='grep --color=auto'
+alias fgrep='fgrep --color=auto'
+alias egrep='egrep --color=auto'
 
-source $ZSH/oh-my-zsh.sh
+# Safety
+alias rm='rm -i'
+alias cp='cp -i'
+alias mv='mv -i'
 
-# User configuration
+# System
+alias df='df -h'
+alias du='du -h'
+alias free='free -h'
+alias ps='ps aux'
+alias top='htop'
 
-# export MANPATH="/usr/local/man:$MANPATH"
+# ============================================================================
+# ALIASES - Git
+# ============================================================================
 
-# You may need to manually set your language environment
-# export LANG=en_US.UTF-8
+alias g='git'
+alias ga='git add'
+alias gaa='git add --all'
+alias gb='git branch'
+alias gc='git commit'
+alias gcm='git commit -m'
+alias gco='git checkout'
+alias gd='git diff'
+alias gl='git log --oneline --graph --decorate --all'
+alias gp='git push'
+alias gpl='git pull'
+alias gs='git status'
+alias gst='git stash'
+alias gstp='git stash pop'
 
-# Preferred editor for local and remote sessions
-# if [[ -n $SSH_CONNECTION ]]; then
-#   export EDITOR='vim'
-# else
-#   export EDITOR='mvim'
-# fi
+# ============================================================================
+# ALIASES - Penetration Testing & Bug Bounty
+# ============================================================================
 
-# Compilation flags
-# export ARCHFLAGS="-arch x86_64"
+# Network
+alias myip='curl -s ifconfig.me'
+alias localip='hostname -I | awk "{print \$1}"'
+alias ports='netstat -tulanp'
+alias listen='netstat -tulanp | grep LISTEN'
+alias connections='netstat -an | grep ESTABLISHED'
 
-# Set personal aliases, overriding those provided by oh-my-zsh libs,
-# plugins, and themes. Aliases can be placed here, though oh-my-zsh
-# users are encouraged to define aliases within the ZSH_CUSTOM folder.
-# For a full list of active aliases, run `alias`.
-#
-# Example aliases
-# alias zshconfig="mate ~/.zshrc"
-# alias ohmyzsh="mate ~/.oh-my-zsh"
+# Nmap
+alias nmap-quick='nmap -sn'
+alias nmap-full='nmap -sC -sV -oA scan'
+alias nmap-stealth='nmap -sS -sV -O'
+alias nmap-udp='nmap -sU -sV'
 
-# >>> conda initialize >>>
-# !! Contents within this block are managed by 'conda init' !!
-__conda_setup="$('/home/miguel/anaconda3/bin/conda' 'shell.zsh' 'hook' 2> /dev/null)"
-if [ $? -eq 0 ]; then
-    eval "$__conda_setup"
-else
-    if [ -f "/home/miguel/anaconda3/etc/profile.d/conda.sh" ]; then
-        . "/home/miguel/anaconda3/etc/profile.d/conda.sh"
-    else
-        export PATH="/home/miguel/anaconda3/bin:$PATH"
+# Directory Enumeration
+alias gobuster-dir='gobuster dir -u'
+alias ffuf-dir='ffuf -w /usr/share/wordlists/dirb/common.txt -u'
+alias dirb-scan='dirb'
+
+# Web Testing
+alias burp='java -jar /opt/burpsuite/burpsuite.jar'
+alias sqlmap-basic='sqlmap --batch --random-agent'
+alias nikto-scan='nikto -h'
+
+# File Operations
+alias extract='tar -xzf'
+alias compress='tar -czf'
+alias find-large='find . -type f -size +100M'
+alias find-perms='find . -type f -perm -4000'
+
+# Process Management
+alias pkill='pkill -9'
+alias killport='fuser -k'
+
+# Quick Tools
+alias http-server='python3 -m http.server'
+alias https-server='python3 -m http.server --bind 0.0.0.0'
+alias nc-listener='nc -lvnp'
+
+# ============================================================================
+# FUNCTIONS - Bug Bounty Helpers
+# ============================================================================
+
+# Quick port scan
+portscan() {
+  if [ -z "$1" ]; then
+    echo "Usage: portscan <target>"
+    return 1
+  fi
+  nmap -p- --min-rate=1000 -T4 "$1"
+}
+
+# Subdomain enumeration helper
+subdomain() {
+  if [ -z "$1" ]; then
+    echo "Usage: subdomain <domain>"
+    return 1
+  fi
+  echo "Running subdomain enumeration on $1"
+  # Add your favorite subdomain tool here
+}
+
+# Quick web server
+serve() {
+  local port=${1:-8000}
+  python3 -m http.server "$port"
+}
+
+# ============================================================================
+# ENVIRONMENT VARIABLES
+# ============================================================================
+
+export EDITOR=vim
+export VISUAL=vim
+export PAGER=less
+
+# Add common tool paths
+export PATH="$HOME/.local/bin:$PATH"
+export PATH="/opt/tools:$PATH"
+
+# ============================================================================
+# COMPLETION
+# ============================================================================
+
+autoload -Uz compinit
+compinit
+
+# Case insensitive completion
+zstyle ':completion:*' matcher-list 'm:{a-zA-Z}={A-Za-z}'
+
+# ============================================================================
+# ZELLIJ INTEGRATION
+# ============================================================================
+
+# Auto-start Zellij if not already in a session
+if command -v zellij &> /dev/null; then
+  if [ -z "$ZELLIJ" ]; then
+    if [ "$TERM_PROGRAM" != "vscode" ]; then
+      exec zellij attach -c main || zellij
     fi
+  fi
 fi
-unset __conda_setup
-# <<< conda initialize <<<
 
+# ============================================================================
+# STARTUP MESSAGE - ASCII Art + System Stats
+# ============================================================================
+
+# Display on interactive shells only
+if [[ $- == *i* ]]; then
+  # Display your custom ASCII art handle in cannabis green (#098009)
+  # Use true color if supported, otherwise fallback to closest 256-color
+  if [[ "$TERM" == *"256color"* ]] || [[ "$COLORTERM" == "truecolor" ]] || [[ "$COLORTERM" == "24bit" ]]; then
+    # True color support - use exact hex color #098009
+    print -P "%F{#098009}________ .__              ____          ______________  _____%f"
+    print -P "%F{#098009}\_____  \|  |      ______/_   |______  /  |  \______  \/  |  |%f"
+    print -P "%F{#098009}  _(__  <|  |      \____ \|   \_  __ \/   |  |_  /    /   |  |_%f"
+    print -P "%F{#098009} /       \  |__    |  |_> >   ||  | \/    ^   / /    /    ^   /%f"
+    print -P "%F{#098009}/______  /____/____|   __/|___||__|  \____   | /____/\____   |%f"
+    print -P "%F{#098009}       \/    /_____/__|                   |__|            |__|%f"
+  else
+    # Fallback to closest 256-color green (color 28 is close to #098009)
+    print -P "%F{28}________ .__              ____          ______________  _____%f"
+    print -P "%F{28}\_____  \|  |      ______/_   |______  /  |  \______  \/  |  |%f"
+    print -P "%F{28}  _(__  <|  |      \____ \|   \_  __ \/   |  |_  /    /   |  |_%f"
+    print -P "%F{28} /       \  |__    |  |_> >   ||  | \/    ^   / /    /    ^   /%f"
+    print -P "%F{28}/______  /____/____|   __/|___||__|  \____   | /____/\____   |%f"
+    print -P "%F{28}       \/    /_____/__|                   |__|            |__|%f"
+  fi
+  echo ""
+
+  # Display system information
+  if command -v neofetch &> /dev/null; then
+    neofetch
+  elif command -v fastfetch &> /dev/null; then
+    fastfetch
+  elif command -v screenfetch &> /dev/null; then
+    screenfetch
+  else
+    # Fallback: Custom system info display
+    echo ""
+    echo "%F{yellow}═══════════════════════════════════════════════════════════%f"
+    echo "%F{green}  System Information%f"
+    echo "%F{yellow}═══════════════════════════════════════════════════════════%f"
+    echo ""
+    echo "  %F{cyan}OS:%f        $(uname -s) $(uname -r)"
+    echo "  %F{cyan}Host:%f      $(hostname)"
+    echo "  %F{cyan}User:%f      $(whoami)"
+    echo "  %F{cyan}Shell:%f     $SHELL"
+    echo "  %F{cyan}Uptime:%f    $(uptime -p 2>/dev/null || uptime | awk '{print $3,$4}' | sed 's/,//')"
+    echo ""
+  fi
+fi
