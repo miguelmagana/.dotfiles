@@ -2,6 +2,11 @@
 # ZSH CONFIGURATION - Hacker/Bug Bounty Optimized
 # ============================================================================
 
+# Exit if not running in zsh
+if [ -z "$ZSH_VERSION" ]; then
+    return 0 2>/dev/null || exit 0
+fi
+
 # History Configuration (Large for tool outputs)
 HISTFILE=~/.zsh_history
 HISTSIZE=50000
@@ -40,9 +45,9 @@ zstyle ':vcs_info:*' check-for-changes true
 # Function to shorten path (breadcrumbs)
 shorten_path() {
   local pwd="${PWD/#$HOME/~}"
-  local max_len=35
+  local max_len=40
   if [[ ${#pwd} -gt $max_len ]]; then
-    echo "${pwd:0:12}...${pwd: -20}"
+    echo "${pwd:0:15}...${pwd: -22}"
   else
     echo "$pwd"
   fi
@@ -57,17 +62,67 @@ exit_code_indicator() {
   fi
 }
 
-# Pre-command hook to update VCS info
+# Function to build separator line that fills remaining width
+build_separator() {
+  local term_width=${COLUMNS:-80}
+  
+  # Build left content (without color codes for length calculation)
+  local user_host_plain="${USER}@$(hostname)"
+  local path_plain="$(shorten_path)"
+  
+  # Get git info plain text (remove color codes)
+  local git_info_plain="${vcs_info_msg_0_}"
+  git_info_plain="${git_info_plain//%F\{[^}]*\}/}"
+  git_info_plain="${git_info_plain//%f/}"
+  git_info_plain="${git_info_plain//%b/}"
+  git_info_plain="${git_info_plain//%u/*}"
+  git_info_plain="${git_info_plain//%c/+}"
+  
+  # Exit code (will be calculated in prompt, use placeholder)
+  local exit_plain="✓"
+  
+  # Build left side plain text
+  local left_plain="${user_host_plain} ${path_plain}${git_info_plain} ${exit_plain}"
+  
+  # Right side (timestamp) - 8 chars for HH:MM:SS
+  local right_plain="HH:MM:SS"
+  local right_len=8
+  
+  # Calculate lengths
+  local left_len=${#left_plain}
+  
+  # Border characters: ┌─ (2) + space (1) + space before separator (1) + space after separator (1) + ─┐ (2) = 7
+  local border_chars=7
+  local available=$((term_width - left_len - right_len - border_chars))
+  
+  # Minimum separator width
+  [[ $available -lt 3 ]] && available=3
+  
+  # Build separator
+  local sep=""
+  local i=0
+  while [[ $i -lt $available ]]; do
+    sep="${sep}─"
+    i=$((i + 1))
+  done
+  
+  echo "$sep"
+}
+
+# Pre-command hook to update VCS info and build separator
 precmd() {
   vcs_info
+  _prompt_separator=$(build_separator)
 }
 
 # Set prompt with two-line layout and box-drawing borders
 setopt PROMPT_SUBST
 
-# First line: Info spread across with separator
-# Format: ┌─ user@host path (git) [exit] ──────────────────────── time ─┐
-PROMPT='%F{cyan}┌─%f %F{cyan}%n@%m%f %F{blue}%$(shorten_path)%f${vcs_info_msg_0_} $(exit_code_indicator) %F{cyan}─%f%F{yellow}%*%f %F{cyan}─┐%f
+# First line: Full width with separator
+# Left: user@host path git exit_code
+# Middle: separator (fills remaining space)
+# Right: timestamp
+PROMPT='%F{cyan}┌─%f %F{cyan}%n@%m%f %F{blue}%$(shorten_path)%f${vcs_info_msg_0_} $(exit_code_indicator) %F{cyan}${_prompt_separator}%f %F{yellow}%*%f %F{cyan}─┐%f
 %F{cyan}└─%f %F{green}%#%f '
 
 RPROMPT=''
@@ -239,8 +294,8 @@ fi
 # STARTUP MESSAGE - ASCII Art + System Stats
 # ============================================================================
 
-# Display on interactive shells only
-if [[ $- == *i* ]]; then
+# Display on interactive shells only (zsh-specific check)
+if [[ -o interactive ]] || [[ -n "$PS1" ]]; then
   # Display your custom ASCII art handle in cannabis green (#098009)
   # Use true color if supported, otherwise fallback to closest 256-color
   if [[ "$TERM" == *"256color"* ]] || [[ "$COLORTERM" == "truecolor" ]] || [[ "$COLORTERM" == "24bit" ]]; then
@@ -262,9 +317,35 @@ if [[ $- == *i* ]]; then
   fi
   echo ""
 
-  # Display system information
+  # Display system information with rotating ASCII art
   if command -v neofetch &> /dev/null; then
-    neofetch
+    # Rotation mechanism: cycle through 4 ASCII arts
+    NEOFETCH_ASCII_DIR="$HOME/.config/neofetch/ascii"
+    NEOFETCH_STATE_FILE="$HOME/.config/neofetch/.ascii_state"
+    
+    # Get current rotation state (default to 1)
+    if [ -f "$NEOFETCH_STATE_FILE" ]; then
+      CURRENT_ASCII=$(cat "$NEOFETCH_STATE_FILE")
+    else
+      CURRENT_ASCII=1
+    fi
+    
+    # Cycle through 1-4
+    if [ "$CURRENT_ASCII" -ge 4 ]; then
+      NEXT_ASCII=1
+    else
+      NEXT_ASCII=$((CURRENT_ASCII + 1))
+    fi
+    
+    # Save next state for next time
+    echo "$NEXT_ASCII" > "$NEOFETCH_STATE_FILE"
+    
+    # Use the current ASCII art file
+    if [ -f "$NEOFETCH_ASCII_DIR/ascii${CURRENT_ASCII}.txt" ]; then
+      neofetch --ascii_distro custom --ascii_source "$NEOFETCH_ASCII_DIR/ascii${CURRENT_ASCII}.txt" --ascii_colors 6 6 6 6 6 6
+    else
+      neofetch
+    fi
   elif command -v fastfetch &> /dev/null; then
     fastfetch
   elif command -v screenfetch &> /dev/null; then

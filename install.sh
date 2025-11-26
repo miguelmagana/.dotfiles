@@ -56,6 +56,24 @@ if [ -d "$DOTFILES_DIR/.vim" ]; then
     ln -sf "$DOTFILES_DIR/.vim" "$HOME/.vim"
 fi
 
+# Install neofetch ASCII art files
+if [ -d "$DOTFILES_DIR/.config/neofetch" ]; then
+    echo "  Setting up neofetch ASCII art rotation..."
+    mkdir -p "$HOME/.config/neofetch/ascii"
+    if [ -d "$HOME/.config/neofetch/ascii" ] && [ ! -L "$HOME/.config/neofetch/ascii" ]; then
+        # Backup existing if it exists and is not a symlink
+        if [ "$(ls -A $HOME/.config/neofetch/ascii 2>/dev/null)" ]; then
+            echo "  Backing up existing neofetch ASCII files..."
+            mv "$HOME/.config/neofetch/ascii" "$BACKUP_DIR/neofetch_ascii"
+        fi
+    fi
+    # Copy ASCII art files
+    if [ -d "$DOTFILES_DIR/.config/neofetch/ascii" ]; then
+        cp -r "$DOTFILES_DIR/.config/neofetch/ascii"/* "$HOME/.config/neofetch/ascii/" 2>/dev/null || true
+        echo "  ✓ Neofetch ASCII art files installed"
+    fi
+fi
+
 echo ""
 echo "Checking dependencies..."
 echo ""
