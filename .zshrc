@@ -72,7 +72,9 @@ build_separator() {
   
   # Get git info plain text (remove color codes)
   local git_info_plain="${vcs_info_msg_0_}"
-  git_info_plain="${git_info_plain//%F\{[^}]*\}/}"
+  # Remove %F{...} patterns (handles named colors, numbers, and hex codes like #098009)
+  # Use sed for reliable regex matching across all zsh versions
+  git_info_plain=$(echo "$git_info_plain" | sed 's/%F{[^}]*}//g')
   git_info_plain="${git_info_plain//%f/}"
   git_info_plain="${git_info_plain//%b/}"
   git_info_plain="${git_info_plain//%u/*}"
