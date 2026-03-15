@@ -293,6 +293,101 @@ if command -v zellij &> /dev/null; then
 fi
 
 # ============================================================================
+# AURION FRAMEWORK - Cyber War Room Workspace Automation
+# ============================================================================
+
+# Main dispatcher — extensible for future subcommands
+aurion() {
+  local subcmd="${1:-help}"
+  shift 2>/dev/null
+
+  case "$subcmd" in
+    reverse-shell|rs) _aurion_breach_room "$@" ;;
+    help|--help|-h|"") _aurion_help ;;
+    *)
+      echo "aurion: unknown command '${subcmd}'"
+      _aurion_help
+      return 1
+      ;;
+  esac
+}
+
+_aurion_help() {
+  echo ""
+  echo "  ⚔  AURION — Cyber War Room Workspace Automation"
+  echo ""
+  echo "  Usage: aurion <command> [options]"
+  echo ""
+  echo "  Commands:"
+  echo "    reverse-shell [lport] [http-port]   Deploy BREACH ROOM for reverse shell ops"
+  echo "    rs [lport] [http-port]              Shorthand for reverse-shell"
+  echo "    help                                Show this message"
+  echo ""
+  echo "  Defaults: lport=4444  http-port=8080"
+  echo ""
+  echo "  Examples:"
+  echo "    aurion reverse-shell"
+  echo "    aurion rs 9001"
+  echo "    aurion rs 9001 8888"
+  echo ""
+}
+
+# BREACH ROOM — Deploys a 3-pane reverse shell operations workspace in zellij.
+#
+# Layout:
+#   ┌────────────────────┬──────────────────────┐
+#   │  ⚗ PAYLOAD FORGE  │  🎯 INFILTRATOR      │
+#   │  (box cwd)         │  nc -lvnp <lport>    │
+#   ├────────────────────┤  (full right column) │
+#   │  💀 ARSENAL        │                      │
+#   │  http.server /tmp  │                      │
+#   └────────────────────┴──────────────────────┘
+#
+# Usage: _aurion_breach_room [lport] [http-port]
+_aurion_breach_room() {
+  local lport="${1:-4444}"
+  local http_port="${2:-8080}"
+  local cwd="$PWD"
+  local box_name="${PWD##*/}"
+
+  if [[ -z "$ZELLIJ" ]]; then
+    echo "aurion: not inside a zellij session — launch zellij first"
+    return 1
+  fi
+
+  echo "⚔  Deploying BREACH ROOM  [ box: ${box_name} | listener: :${lport} | arsenal: /tmp:${http_port} ]"
+
+  # 1. New tab — focus lands on single pane (becomes PAYLOAD FORGE)
+  zellij action new-tab --name "⚔ BREACH ROOM"
+  sleep 0.3
+
+  # 2. PAYLOAD FORGE — main workspace anchored in the box directory
+  zellij action rename-pane "⚗ PAYLOAD FORGE"
+  zellij action write-chars "cd '${cwd}'"$'\n'
+  sleep 0.1
+  zellij action write-chars "clear"$'\n'
+  sleep 0.1
+
+  # 3. INFILTRATOR — right column, full height, runs nc listener immediately
+  #    Falls back to plain nc if rlwrap is not available (rlwrap gives arrow keys + history in the shell)
+  zellij action new-pane --direction right --name "🎯 INFILTRATOR"
+  zellij action write-chars "rlwrap nc -lvnp ${lport} 2>/dev/null || nc -lvnp ${lport}"$'\n'
+  sleep 0.1
+
+  # 4. Focus back to PAYLOAD FORGE, split down for ARSENAL
+  zellij action move-focus left
+  sleep 0.1
+
+  # 5. ARSENAL — bottom-left, serves files from /tmp so you can wget/curl payloads to target
+  zellij action new-pane --direction down --name "💀 ARSENAL"
+  zellij action write-chars "cd /tmp && python3 -m http.server ${http_port}"$'\n'
+  sleep 0.1
+
+  # 6. Return focus to PAYLOAD FORGE (top-left)
+  zellij action move-focus up
+}
+
+# ============================================================================
 # STARTUP MESSAGE - ASCII Art + System Stats
 # ============================================================================
 
