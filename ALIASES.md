@@ -165,6 +165,49 @@ subdomain example.com
 
 Note: This is a placeholder function. Add your favorite subdomain enumeration tool in `.zshrc`.
 
+## Aurion — Cyber War Room Automation
+
+The `aurion` command is a dispatcher framework for workspace automation. Run `aurion help` to see all commands.
+
+### reverse-shell / rs
+
+Opens a new zellij tab named **⚔ BREACH ROOM** with three organized panes for reverse shell operations.
+
+**Layout:**
+```
+┌──────────────────────┬─────────────────────────┐
+│  ⚗ PAYLOAD FORGE    │  🎯 INFILTRATOR          │
+│  (box cwd)          │  nc -lvnp <lport>        │
+├──────────────────────┤  (full right column)     │
+│  💀 ARSENAL          │                          │
+│  http.server /tmp   │                          │
+└──────────────────────┴─────────────────────────┘
+```
+
+| Pane | Purpose |
+|------|---------|
+| `⚗ PAYLOAD FORGE` | Interactive shell anchored in your box directory — craft commands, edit files |
+| `🎯 INFILTRATOR` | Netcat listener (with `rlwrap` for arrow keys/history if available) |
+| `💀 ARSENAL` | `python3 -m http.server` from `/tmp` — serve payloads to the target |
+
+**Usage:**
+```bash
+aurion reverse-shell              # defaults: lport=4444, http=8080
+aurion rs 9001                    # custom listener port
+aurion rs 9001 8888               # custom listener + http port
+```
+
+**Examples:**
+```bash
+# From your box directory
+cd ~/boxes/my-htb-box
+aurion rs 9001
+# Then craft your reverse shell payload in PAYLOAD FORGE,
+# serve it via ARSENAL (:8888), and catch the shell in INFILTRATOR (:9001)
+```
+
+> **Note:** Requires an active zellij session. `rlwrap` is optional but recommended for a better shell experience after catching a connection.
+
 ## Tips
 
 - Use `alias` to see all active aliases
